@@ -29,21 +29,23 @@ npm run tauri build
 ## 發行（CI/CD）
 
 - **CI**（`.github/workflows/ci.yml`）：push / PR 到 `main` 自動跑前端測試、型別檢查與三平台 Rust 測試。
-- **Release**（`.github/workflows/release.yml`）：推送 `v*` tag 觸發，建置
-  Windows x86_64/ARM64、macOS x86_64/ARM64、Linux x86_64 五組安裝檔，
+- **Release**（`.github/workflows/release.yml`）：**push 到 `main` 即自動觸發**（文件類變更除外），
+  版號以當下 UTC 日期時間自動產生（`YY.M.D-當日分鐘數`，例如 `26.7.12-853`，沿用舊 Electron 專案格式），
+  自動產生上次發佈以來的 commit 列表作為 release notes，清除舊草稿後建置
+  Windows x86_64/ARM64（NSIS）、macOS x86_64/ARM64、Linux x86_64 五組安裝檔，
   以「草稿 Release」上傳，並產生應用程式內更新所需的 `latest.json` 與 `.sig`。
 
 發行一個新版本：
 
 ```bash
-# 1. 更新版本號：package.json、src-tauri/tauri.conf.json、src-tauri/Cargo.toml
-# 2. commit 後打 tag
-git tag v0.2.0
-git push origin main --tags
-# 3. CI 完成後到 GitHub Releases 檢查草稿，通過 smoke test 再按下 Publish
+git push origin main   # 就這樣，版號自動以日期時間產生
+# CI 完成後到 GitHub Releases 檢查草稿，通過 smoke test 再按下 Publish
 ```
 
-Release 發佈後，已安裝的應用程式啟動時（或按「檢查更新」）就會收到新版本提示。
+Publish 之後，已安裝的應用程式啟動時（或按「檢查更新」）就會收到新版本提示。
+repo 內的 `version: 0.1.0` 只是佔位值，實際發行版號由 CI 注入（`scripts/set-version.mjs`）。
+
+> Windows 只出 NSIS 安裝檔：WiX MSI 的版號格式不接受 `-853` 這種時間後綴。
 
 首次使用前需在 GitHub repo 設定 secrets：
 

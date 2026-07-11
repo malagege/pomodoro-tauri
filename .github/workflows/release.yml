@@ -1,12 +1,15 @@
 name: Release
 
-# 發行流程（spec 9.7 / 9.8 / AC-13）：
-# 推送 v* tag 觸發，建置五組必要 artifacts：
-#   Windows x86_64 / ARM64、macOS x86_64 / ARM64、Linux x86_64
-# 並產生 updater 簽章與 latest.json（上傳到 GitHub Release），
-# 應用程式內的 updater 以
+# 發行流程（spec 9.7 / 9.8 / AC-13，沿用舊 Electron 專案的發佈模式）：
+# push 到 main 即觸發，版號以當下 UTC 日期時間產生（YY.M.D-當日分鐘數，
+# 例如 26.7.12-853），自動建立草稿 Release 並清除舊草稿；
+# 建置五組必要 artifacts：
+#   Windows x86_64 / ARM64（NSIS；WiX MSI 不支援時間後綴版號，故不出 MSI）、
+#   macOS x86_64 / ARM64、Linux x86_64
+# 並產生 updater 簽章與 latest.json。
+# 檢查完草稿內容後手動 Publish，已安裝的應用程式即可透過
 #   https://github.com/malagege/pomodoro-tauri/releases/latest/download/latest.json
-# 為 endpoint 檢查新版本。
+# 收到更新。
 #
 # 需要的 repository secrets：
 #   TAURI_SIGNING_PRIVATE_KEY          updater 簽章私鑰內容（本機 ~/.tauri/pomodoro-updater.key）
@@ -18,21 +21,71 @@ name: Release
 
 on:
   push:
-    tags: ['v*']
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: write
 
 jobs:
+  draft:
+    name: 版號與草稿 Release
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      release-notes: ${{ steps.notes.outputs.notes }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: 以 UTC 日期時間產生版號（沿用舊專案格式）
+        id: version
+        run: |
+          minutes=$((10#$(date -u +%H) * 60 + 10#$(date -u +%M)))
+          version="$(date -u +'%y.%-m.%-d')-${minutes}"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "本次版號: ${version}"
+
+      - name: 產生 release notes（上次發佈以來的 commits）
+        id: notes
+        run: |
+          last=$(git describe --tags --abbrev=0 2>/dev/null || git rev-list --max-parents=0 HEAD)
+          {
+            echo 'notes<<NOTES_EOF'
+            git log --pretty=format:'- %s (%h)' "${last}"..HEAD
+            echo
+            echo 'NOTES_EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: 刪除過期的草稿 Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api "repos/${GITHUB_REPOSITORY}/releases" --paginate \
+            --jq '.[] | select(.draft) | .id' |
+          while read -r id; do
+            echo "刪除草稿 release id=${id}"
+            gh api -X DELETE "repos/${GITHUB_REPOSITORY}/releases/${id}"
+          done
+
   publish:
+    needs: draft
     strategy:
       fail-fast: false
       matrix:
         include:
+          # Windows 只出 NSIS：WiX MSI 的 ProductVersion 不接受 -NNN 時間後綴
           - name: windows-x86_64
             platform: windows-latest
-            args: ''
-          # Windows ARM64：原生 target 交叉編譯，WiX 不支援 ARM64，只出 NSIS（spec 9.8）
+            args: '--bundles nsis'
           - name: windows-arm64
             platform: windows-latest
             args: '--target aarch64-pc-windows-msvc --bundles nsis'
@@ -74,16 +127,19 @@ jobs:
       - name: 安裝依賴
         run: npm ci
 
-      - name: 建置並發佈到 GitHub Release
+      - name: 注入日期時間版號（僅本次建置，不寫回 repo）
+        run: node scripts/set-version.mjs "${{ needs.draft.outputs.version }}"
+
+      - name: 建置並上傳到草稿 Release
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: 'Pomodoro v__VERSION__'
-          releaseBody: '請見下方 assets 下載對應平台的安裝檔。'
+          tagName: v${{ needs.draft.outputs.version }}
+          releaseName: 'Pomodoro v${{ needs.draft.outputs.version }}'
+          releaseBody: ${{ needs.draft.outputs.release-notes }}
           # 以草稿建立：五組 artifacts 齊全並通過 smoke test 後再手動發佈（AC-13）
           releaseDraft: true
           prerelease: false
