@@ -1,0 +1,25 @@
+[package]
+name = "pomodoro-tauri"
+version = "0.1.0"
+description = "常駐桌面的波浪番茄鐘（Tauri 2 + Vue 3 重寫版）"
+authors = ["Jeffery"]
+edition = "2021"
+
+[lib]
+name = "pomodoro_tauri_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+# macOS 透明視窗需要 macos-private-api（spec 9.4）
+tauri = { version = "2", features = ["macos-private-api"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri-plugin-notification = "2"
+tauri-plugin-store = "2"
+tauri-plugin-single-instance = "2"
+tauri-plugin-updater = "2"
+# 跨平台 user-input idle time（spec 6.4 允許的第三方 crate，鎖定版本並提交 Cargo.lock）
+user-idle = "0.6"

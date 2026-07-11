@@ -1,0 +1,10 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "reminder-capability",
+  "description": "提醒窗：只能收事件與關閉自己，不得寫入設定或使用 updater（spec 9.5）",
+  "windows": ["reminder"],
+  "permissions": [
+    "core:event:default",
+    "core:window:allow-close"
+  ]
+}

@@ -1,0 +1,22 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* 透明視窗：body 使用 10% 黑色透明底（相容舊版），桌面內容可透出 */
+body {
+  background-color: rgba(0, 0, 0, 0.1);
+  font-family: 'Segoe UI', 'Microsoft JhengHei', system-ui, sans-serif;
+  color: #1a1a1a;
+  user-select: none;
+  -webkit-user-select: none;
+}

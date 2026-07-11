@@ -1,0 +1,12 @@
+# 依賴與建置輸出
+node_modules/
+dist/
+src-tauri/target/
+src-tauri/gen/
+
+# 舊版 Electron 參考專案（僅供閱讀，不納入版控，之後手動刪除）
+vue-electron-Pomodoro/
+
+# 其他
+*.local
+.DS_Store
