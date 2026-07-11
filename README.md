@@ -18,12 +18,39 @@ cd src-tauri && cargo test   # Rust 測試
 
 ## 打包
 
-```bash
+本機打包（updater 簽章已啟用，需先指定私鑰）：
+
+```powershell
+$env:TAURI_SIGNING_PRIVATE_KEY = "$HOME\.tauri\pomodoro-updater.key"  # 路徑或私鑰內容皆可
+$env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = ""
 npm run tauri build
 ```
 
-updater 正式啟用前需替換 `src-tauri/tauri.conf.json` 的 endpoint、
-將 `bundle.createUpdaterArtifacts` 設為 `true`，並在 CI 提供 `TAURI_SIGNING_PRIVATE_KEY`。
+## 發行（CI/CD）
+
+- **CI**（`.github/workflows/ci.yml`）：push / PR 到 `main` 自動跑前端測試、型別檢查與三平台 Rust 測試。
+- **Release**（`.github/workflows/release.yml`）：推送 `v*` tag 觸發，建置
+  Windows x86_64/ARM64、macOS x86_64/ARM64、Linux x86_64 五組安裝檔，
+  以「草稿 Release」上傳，並產生應用程式內更新所需的 `latest.json` 與 `.sig`。
+
+發行一個新版本：
+
+```bash
+# 1. 更新版本號：package.json、src-tauri/tauri.conf.json、src-tauri/Cargo.toml
+# 2. commit 後打 tag
+git tag v0.2.0
+git push origin main --tags
+# 3. CI 完成後到 GitHub Releases 檢查草稿，通過 smoke test 再按下 Publish
+```
+
+Release 發佈後，已安裝的應用程式啟動時（或按「檢查更新」）就會收到新版本提示。
+
+首次使用前需在 GitHub repo 設定 secrets：
+
+| Secret | 內容 |
+| --- | --- |
+| `TAURI_SIGNING_PRIVATE_KEY` | `~/.tauri/pomodoro-updater.key` 私鑰檔的完整內容 |
+| `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | 私鑰密碼（目前為空字串） |
 
 ## Legacy 參考
 

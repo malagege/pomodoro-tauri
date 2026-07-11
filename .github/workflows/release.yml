@@ -1,0 +1,90 @@
+name: Release
+
+# 發行流程（spec 9.7 / 9.8 / AC-13）：
+# 推送 v* tag 觸發，建置五組必要 artifacts：
+#   Windows x86_64 / ARM64、macOS x86_64 / ARM64、Linux x86_64
+# 並產生 updater 簽章與 latest.json（上傳到 GitHub Release），
+# 應用程式內的 updater 以
+#   https://github.com/malagege/pomodoro-tauri/releases/latest/download/latest.json
+# 為 endpoint 檢查新版本。
+#
+# 需要的 repository secrets：
+#   TAURI_SIGNING_PRIVATE_KEY          updater 簽章私鑰內容（本機 ~/.tauri/pomodoro-updater.key）
+#   TAURI_SIGNING_PRIVATE_KEY_PASSWORD 私鑰密碼（目前為空字串）
+# macOS 程式碼簽章／notarize 需要 Apple Developer 憑證後再補：
+#   APPLE_CERTIFICATE / APPLE_CERTIFICATE_PASSWORD / APPLE_SIGNING_IDENTITY / APPLE_ID / APPLE_PASSWORD / APPLE_TEAM_ID
+#
+# Linux ARM64 為後續擴充（spec 15.3），不阻塞第一版 release。
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows-x86_64
+            platform: windows-latest
+            args: ''
+          # Windows ARM64：原生 target 交叉編譯，WiX 不支援 ARM64，只出 NSIS（spec 9.8）
+          - name: windows-arm64
+            platform: windows-latest
+            args: '--target aarch64-pc-windows-msvc --bundles nsis'
+          - name: macos-x86_64
+            platform: macos-latest
+            args: '--target x86_64-apple-darwin'
+          - name: macos-arm64
+            platform: macos-latest
+            args: '--target aarch64-apple-darwin'
+          - name: linux-x86_64
+            platform: ubuntu-22.04
+            args: ''
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安裝 Linux 系統依賴
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file \
+            libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev libxss-dev patchelf
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-pc-windows-msvc,x86_64-apple-darwin,aarch64-apple-darwin
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          key: ${{ matrix.name }}
+
+      - name: 安裝依賴
+        run: npm ci
+
+      - name: 建置並發佈到 GitHub Release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: 'Pomodoro v__VERSION__'
+          releaseBody: '請見下方 assets 下載對應平台的安裝檔。'
+          # 以草稿建立：五組 artifacts 齊全並通過 smoke test 後再手動發佈（AC-13）
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}

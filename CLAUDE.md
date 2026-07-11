@@ -28,10 +28,16 @@
 - 提醒窗是單一實例 label=`reminder` 的 WebviewWindow，路由 `/#/reminder`，payload 走 typed event（`reminder-update`／`reminder-ready`），不得用 URL query 傳文字。
 - capabilities 採最小權限：主視窗與提醒窗分開（`src-tauri/capabilities/`）。
 
-## 更新（updater）
+## CI/CD 與更新（updater）
 
-- updater 公鑰已寫在 `src-tauri/tauri.conf.json`；私鑰在 `C:\Users\steve\.tauri\pomodoro-updater.key`（不進 repo）。
-- endpoint 目前是佔位 URL，正式發行前需換成實際 release endpoint，並把 `bundle.createUpdaterArtifacts` 改為 `true`、於 CI 設定 `TAURI_SIGNING_PRIVATE_KEY`。
+- `.github/workflows/ci.yml`：push/PR 到 main 時跑前端測試建置 + 三平台 `cargo test`。
+- `.github/workflows/release.yml`：推 `v*` tag 觸發，建置五組必要 artifacts（Windows x86_64/ARM64、macOS x86_64/ARM64、Linux x86_64），以草稿 Release 上傳並產生 updater 用的 `latest.json` 與 `.sig` 簽章。
+- 發行步驟：改 `package.json` 與 `src-tauri/tauri.conf.json`、`src-tauri/Cargo.toml` 的版本號 → commit → `git tag v0.x.0 && git push origin main --tags` → CI 完成後到 GitHub 檢查草稿 Release、通過 smoke test 再發佈。發佈後應用程式的「檢查更新」就會看到新版。
+- updater 公鑰在 `src-tauri/tauri.conf.json`；私鑰在 `C:\Users\steve\.tauri\pomodoro-updater.key`（不進 repo，遺失就無法再簽新版本）。
+- GitHub repo 需設定 secrets：`TAURI_SIGNING_PRIVATE_KEY`（私鑰檔內容）、`TAURI_SIGNING_PRIVATE_KEY_PASSWORD`（目前為空字串）。
+- `createUpdaterArtifacts` 已開啟，本機 `npm run tauri build` 需先設定：
+  `$env:TAURI_SIGNING_PRIVATE_KEY="C:\Users\steve\.tauri\pomodoro-updater.key"; $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD=""`（變數值可為路徑或私鑰內容）
+- macOS 簽章／notarize 需要 Apple Developer 憑證，secrets 名稱已列在 release.yml 註解中，待補。
 
 ## 注意事項
 
