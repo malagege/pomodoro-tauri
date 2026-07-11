@@ -34,7 +34,7 @@
 - `.github/workflows/release.yml`：push 到 main 自動觸發（`.md`、`docs/` 除外）。版號由 CI 以 UTC 日期時間產生（`YY.M.D-當日分鐘數`，沿用舊 Electron 專案格式，`scripts/set-version.mjs` 注入 tauri.conf.json，不寫回 repo），自動產生 commit 列表 release notes、刪除舊草稿，建置五組必要 artifacts（Windows x86_64/ARM64 NSIS、macOS x86_64/ARM64、Linux x86_64），以草稿 Release 上傳並產生 updater 用的 `latest.json` 與 `.sig` 簽章。
 - 發行步驟：push main → CI 完成後到 GitHub 檢查草稿 Release、通過 smoke test 再 Publish。發佈後應用程式的「檢查更新」就會看到新版。repo 內 `version: 0.1.0` 是佔位值，勿手動改版號。
 - Windows 不出 MSI：WiX 版號不接受 `-NNN` 時間後綴，只出 NSIS（updater 支援）。
-- updater 公鑰在 `src-tauri/tauri.conf.json`；私鑰在 `C:\Users\steve\.tauri\pomodoro-updater.key`（不進 repo，遺失就無法再簽新版本）。
+- updater 公鑰在 `src-tauri/tauri.conf.json`；私鑰在 `C:\Users\steve\.tauri\pomodoro-updater.key`（不進 repo，遺失就無法再簽新版本）。金鑰產生指令與遺失重建步驟見 README「updater 簽章金鑰」一節。
 - GitHub repo 需設定 secrets：`TAURI_SIGNING_PRIVATE_KEY`（私鑰檔內容）、`TAURI_SIGNING_PRIVATE_KEY_PASSWORD`（目前為空字串）。
 - `createUpdaterArtifacts` 已開啟，本機 `npm run tauri build` 需先設定：
   `$env:TAURI_SIGNING_PRIVATE_KEY="C:\Users\steve\.tauri\pomodoro-updater.key"; $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD=""`（變數值可為路徑或私鑰內容）
