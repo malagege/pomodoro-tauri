@@ -11,9 +11,9 @@ jobs:
     name: 前端測試與建置
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -36,7 +36,7 @@ jobs:
         platform: [ubuntu-22.04, windows-latest, macos-latest]
     runs-on: ${{ matrix.platform }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: 安裝 Linux 系統依賴（webkit2gtk 與 XScreenSaver）
         if: matrix.platform == 'ubuntu-22.04'
