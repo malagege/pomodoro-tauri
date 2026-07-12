@@ -12,9 +12,9 @@ body,
   overflow: hidden;
 }
 
-/* 透明視窗：body 使用 10% 黑色透明底（相容舊版），桌面內容可透出 */
+/* 透明視窗：半透明深色底，兼顧透出桌面與計時數字的可讀性 */
 body {
-  background-color: rgba(0, 0, 0, 0.1);
+  background-color: rgba(18, 20, 24, 0.55);
   font-family: 'Segoe UI', 'Microsoft JhengHei', system-ui, sans-serif;
   color: #1a1a1a;
   user-select: none;

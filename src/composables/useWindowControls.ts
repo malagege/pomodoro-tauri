@@ -20,5 +20,12 @@ export function useWindowControls() {
     await getCurrentWindow().setAlwaysOnTop(value)
   }
 
-  return { minimize, closeApp, setAlwaysOnTop }
+  /** 開始拖曳視窗（由 mousedown 觸發）。 */
+  async function startDragging(): Promise<void> {
+    if (!isTauri()) return
+    const { getCurrentWindow } = await import('@tauri-apps/api/window')
+    await getCurrentWindow().startDragging()
+  }
+
+  return { minimize, closeApp, setAlwaysOnTop, startDragging }
 }

@@ -1,12 +1,7 @@
 <template>
-  <header
-    class="titlebar"
-    data-tauri-drag-region
-  >
-    <span
-      class="app-name"
-      data-tauri-drag-region
-    >Pomodoro</span>
+  <!-- 拖曳由 MainView 的全域 mousedown 處理，整個視窗皆可拖曳 -->
+  <header class="titlebar">
+    <span class="app-name">Pomodoro</span>
     <div class="actions">
       <button
         type="button"
@@ -57,7 +52,6 @@ const { minimize, closeApp } = useWindowControls()
   gap: 2px;
 }
 
-/* 可互動元件為不可拖曳區（未加 data-tauri-drag-region 即不可拖曳） */
 .titlebar-btn {
   width: 26px;
   height: 22px;

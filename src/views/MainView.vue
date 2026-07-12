@@ -1,5 +1,8 @@
 <template>
-  <div class="main-view">
+  <div
+    class="main-view"
+    @mousedown="onWindowMouseDown"
+  >
     <AppTitleBar />
     <TimerControls @toggle-settings="showSettings = !showSettings" />
     <SettingsPanel
@@ -26,10 +29,21 @@ import { useUpdater } from '@/composables/useUpdater'
 
 const settingsStore = useSettingsStore()
 const timer = useTimerStore()
-const { setAlwaysOnTop } = useWindowControls()
+const { setAlwaysOnTop, startDragging } = useWindowControls()
 const updater = useUpdater()
 
 const showSettings = ref(false)
+
+/**
+ * 點視窗任何地方都可拖曳移動；
+ * 互動元件（按鈕、輸入框）與設定面板內部維持原本的點擊行為。
+ */
+function onWindowMouseDown(event: MouseEvent): void {
+  if (event.button !== 0) return
+  const target = event.target as HTMLElement | null
+  if (target?.closest('button, input, select, textarea, a, .settings-panel')) return
+  void startDragging()
+}
 
 onMounted(async () => {
   await settingsStore.load()

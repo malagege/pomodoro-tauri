@@ -80,25 +80,30 @@ const actionIcon = computed(() => (timer.nextAction === 'pause' ? '⏸' : '▶')
   background: rgba(0, 0, 0, 0.55);
 }
 
+/* 深色底墊在時間文字後面，波浪升到頂或桌面很亮時都保持可讀 */
 .time-block {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   min-width: 0;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 6px;
+  padding: 2px 6px;
 }
 
 .time {
   font-size: 22px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  color: #103000;
-  text-shadow: 0 0 3px rgba(255, 255, 255, 0.7);
+  color: #f2ffe0;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 
 .phase {
   font-size: 10px;
-  color: #204010;
+  color: rgba(242, 255, 224, 0.85);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
