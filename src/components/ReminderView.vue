@@ -5,6 +5,7 @@
     role="alertdialog"
     aria-label="番茄鐘提醒"
     @click="close"
+    @contextmenu.prevent
   >
     <p class="message">{{ payload.message }}</p>
     <p class="hint">點擊任意位置關閉</p>
@@ -24,7 +25,13 @@ const payload = reactive<ReminderPayload>({
 
 let unlisten: (() => void) | null = null
 
+function blockKeyboardShortcuts(event: KeyboardEvent): void {
+  event.preventDefault()
+  event.stopPropagation()
+}
+
 onMounted(async () => {
+  window.addEventListener('keydown', blockKeyboardShortcuts, true)
   if (!isTauri()) return
   const { listen, emit } = await import('@tauri-apps/api/event')
   unlisten = await listen<ReminderPayload>('reminder-update', (event) => {
@@ -37,6 +44,7 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
+  window.removeEventListener('keydown', blockKeyboardShortcuts, true)
   unlisten?.()
 })
 
