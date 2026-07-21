@@ -26,8 +26,7 @@ const payload = reactive<ReminderPayload>({
 let unlisten: (() => void) | null = null
 
 function isBlockedShortcut(event: KeyboardEvent): boolean {
-  if (event.key === 'Escape') return false
-  return event.ctrlKey || event.metaKey || event.altKey || /^F\d{1,2}$/u.test(event.key)
+  return event.ctrlKey || event.metaKey || event.altKey || /^F([1-9]|1[0-2])$/u.test(event.key)
 }
 
 function blockKeyboardShortcuts(event: KeyboardEvent): void {
